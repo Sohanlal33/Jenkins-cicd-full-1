@@ -1,1 +1,32 @@
 
+pipeline {
+    agent any
+    tools{
+        maven 'maven'
+    }
+    stages{
+        stage('Build Maven'){
+            steps{
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'gitpws', url: 'https://github.com/Sohanlal33/devops-cicd.git']])
+                sh 'mvn clean install'
+            }
+        }
+    
+        stage('Build docker image'){
+            steps{
+                script{
+                    sh 'docker build -t sohanlal33/devops-integration .'
+                }
+            }
+        }
+        stage('Push image to Hub'){
+            steps{
+                script{
+                   withCredentials([string(credentialsId: 'dockerpwd', variable: 'dockerpwd')]) {
+                   sh 'docker login -u sohanlal33 -p ${dockerpwd}'}
+                   sh 'docker push sohanlal33/devops-integration'
+                }
+            }
+        }
+    }
+}
